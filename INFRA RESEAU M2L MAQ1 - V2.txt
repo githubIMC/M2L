@@ -1,0 +1,1303 @@
+######################################################
+#########  CONFIG  RESEAU  ##### Maquette 1 ##########
+######################################################
+
+Mot de passe console : cisco
+Mot de passe SSH : Login : admin - MdP : admin
+Communaute SNMP : EyesOfNetwork
+
+######### Adresses de gestion #######################
+
+Router RM2L : 	        172.16.99.22  /29
+Switch SW1M2L : 	172.16.99.17  /29
+
+Router HSRP-PRI :	10.0.0.5  /29
+Router HSRP-SEC :	10.0.0.4  /29
+
+Router RLIGUES : 	172.16.99.14  /28
+Switch SW1LIGUE : 	172.16.99.1   /28
+Switch SW2LIGUE : 	172.16.99.2   /28
+Switch SW3LIGUE : 	172.16.99.3   /28
+
+Passerelle WIFI  :	172.16.99.30  /29
+Switch SWIFI :	        172.16.99.25  /29
+PA WIFI :		172.16.99.29  /29
+
+
+######################################################
+###################  Routeur M2L  ####################
+######################################################
+
+en
+conf t
+
+hostname RM2L
+no ip domain-lookup
+no logging console
+
+service password-encryption
+
+! #####################################################
+! La configuration Administration a distance securisee
+! #####################################################
+enable secret cisco
+ip domain-name m2l.fr
+username admin privilege 15 password admin
+
+line vty 0 4	
+password cisco
+login local
+transport input ssh
+exit
+
+crypto key generate rsa
+1024
+
+ip ssh version 2
+ip ssh time-out 60
+ip ssh authentication-retries 2
+
+! #####################################
+! Sous Réseau Interconnexion avec RLIG
+! #####################################
+
+int e1/3
+ip address 10.0.0.9 255.255.255.248
+no shutdown
+exit
+
+! Interconnexion avec RHSRP
+int fa 0/1
+ip address 10.0.0.1 255.255.255.248
+! ip access-group 100 in
+no shutdown
+exit
+
+! Interconnexion avec DMZ
+int e1/0
+ip address 192.168.0.14 255.255.255.240
+no shutdown
+exit
+
+! Sous reseaux VLAN M2L
+int fa0/0
+no shutdown
+exit
+
+! Service Informatique
+int fa0/0.2
+encapsulation dot1Q 2
+ip address 172.16.2.62 255.255.255.192
+exit
+
+! Service Commercial
+int fa0/0.3
+encapsulation dot1Q 3
+ip address 172.16.3.62 255.255.255.192
+ip helper-address 172.16.2.61
+ip helper-address 172.16.2.60
+ip helper-address 172.16.2.58
+exit
+
+! Gestion
+int fa0/0.99
+encapsulation dot1Q 99
+ip address 172.16.99.22 255.255.255.248
+exit
+
+! ##############################
+! Sous reseaux WIRELESS LAN M2L
+! ##############################
+int e1/2
+no shutdown
+exit
+
+int e1/2.100
+encapsulation dot1Q 100
+ip address 172.16.100.30 255.255.255.224
+! ip access-group 102 in
+exit
+
+int e1/2.101
+encapsulation dot1Q 101
+ip address 172.16.101.126 255.255.255.128
+! ip access-group 102 in
+exit
+
+int e1/2.99
+encapsulation dot1Q 99
+ip address 172.16.99.30 255.255.255.248
+exit
+
+! ###################
+!  Config du routage 
+! ###################
+
+router ospf 1
+network 172.16.2.0 0.0.0.63 area 0
+network 172.16.3.0 0.0.0.63 area 0
+network 172.16.100.0 0.0.0.31 area 0
+network 172.16.101.0 0.0.0.127 area 0
+network 192.168.0.0 0.0.0.15 area 0
+network 172.16.99.16 0.0.0.7 area 0
+network 172.16.99.24 0.0.0.7 area 0
+network 10.0.0.0 0.0.0.7 area 0
+network 10.0.0.8 0.0.0.7 area 0
+default-information originate
+passive-interface e1/0
+passive-interface e1/1.2
+passive-interface e1/1.3
+exit
+
+ip route 0.0.0.0 0.0.0.0 10.0.0.6
+
+
+! ##############################################
+! configuration DHCP WIFI Visiteurs et Employes
+! ##############################################
+
+ip dhcp excluded-address 172.16.100.26 172.16.100.30
+ip dhcp excluded-address 172.16.101.121 172.16.101.126
+
+ip dhcp pool Visiteurs
+network 172.16.100.0 255.255.255.224
+default-router 172.16.100.30
+dns-server 172.16.2.61
+dns-server 8.8.8.8
+lease 2 0 0
+exit
+
+ip dhcp pool Employes
+network 172.16.101.0 255.255.255.128
+default-router 172.16.101.126
+dns-server 172.16.2.61
+domain-name m2l.fr
+lease 2 0 0
+exit
+
+! ##################################################
+! ############## Filtrage Firewall #################
+! 
+! I1 Liaison vers LIGUE - 10.0.0.9    Fa0/0
+! I2 Liaison vers DMZ  -  192.168.0.14  Eth 1/0
+! I3 Liaison vers HSRP   - 10.0.0.1    Fa0/1
+! I4 Liaison vers WIFI  - 172.16.x.0    Eth1/2
+!
+! ##################################################
+
+
+! Règles sur acces Internet sur I3 en IN
+access-list 100 permit tcp any 172.16.2.48 0.0.0.15 established
+access-list 100 permit tcp any 172.16.100.0 0.0.0.31 established
+access-list 100 permit tcp any host 172.16.2.60 established
+access-list 100 permit tcp any host 192.168.0.13 eq www
+access-list 100 permit tcp any host 192.168.0.13 eq 443
+access-list 100 permit tcp any host 192.168.0.12 eq ftp
+access-list 100 permit icmp any 172.16.2.48 0.0.0.15 echo-reply
+access-list 100 permit icmp any 172.16.2.48 0.0.0.15 unreachable
+! access-list 100 permit icmp any 172.16.99.0 0.0.0.63 echo-reply
+! access-list 100 permit icmp any 172.16.99.0 0.0.0.63 unreachable
+access-list 100 permit udp any any
+
+! Règles Acces WIFI sur I4 en IN
+access-list 102 deny tcp 172.16.100.0 0.0.0.255 172.16.0.0 0.0.255.255
+access-list 102 permit icmp any 172.16.2.48 0.0.0.15 echo-reply
+access-list 102 permit icmp any 172.16.2.48 0.0.0.15 unreachable
+! access-list 102 permit icmp any 172.16.99.0 0.0.0.63 echo-reply
+! access-list 102 permit icmp any 172.16.99.0 0.0.0.63 unreachable
+access-list 102 permit tcp any any
+access-list 100 permit udp any any
+
+! ###################################################
+
+ip http server
+ip http authentication local
+no ip http secure-server
+
+logging console
+ip domain-lookup
+ip name-server 172.16.2.61
+
+
+! ###################################################
+! ################## Config SNMP ####################
+! ###################################################
+
+
+snmp-server community EyesOfNetwork RO
+snmp-server host 172.16.2.56 EyesOfNetwork
+snmp-server host 172.16.2.59 EyesOfNetwork
+
+snmp-server enable traps flash insertion removal
+snmp-server enable traps cpu threshold
+snmp-server enable traps envmon fan shutdown supply temperature
+
+snmp-server enable traps snmp warmstart linkdown linkup coldstart
+snmp-server enable traps ospf state-change
+
+snmp-server enable traps config
+snmp-server enable traps config-copy
+
+exit
+
+
+########################################################
+################### Router LIGUES ######################
+########################################################
+
+en
+conf t
+
+hostname RLIGUES
+no ip domain-lookup
+no logging console
+
+service password-encryption
+
+enable secret cisco
+ip domain-name m2l.fr
+username admin privilege 15 password admin
+
+line vty 0 4
+password cisco
+login local
+transport input ssh
+exit
+
+crypto key generate rsa
+1024
+
+ip ssh version 2
+ip ssh time-out 60
+ip ssh authentication-retries 2
+
+! Interconnexion avec RM2L
+int Fa 0/1
+ip address 10.0.0.10 255.255.255.248
+no shutdown
+exit
+
+! Sous Reseaux LIGUES
+int Fa 0/0
+no shutdown
+exit
+
+! Sous réseau TENNIS 
+int Fa 0/0.10
+encapsulation dot1Q 10
+ip address 172.16.10.62 255.255.255.192
+ip helper-address 172.16.2.61
+ip helper-address 172.16.2.60
+ip helper-address 172.16.2.58
+exit
+
+! Sous réseau ATHLE
+int Fa 0/0.11
+encapsulation dot1Q 11
+ip address 172.16.11.62 255.255.255.192
+ip helper-address 172.16.2.61
+ip helper-address 172.16.2.60
+ip helper-address 172.16.2.58
+exit
+
+! Sous réseau BASKET 
+int Fa 0/0.12
+encapsulation dot1Q 12
+ip address 172.16.12.62 255.255.255.192
+ip helper-address 172.16.2.61
+ip helper-address 172.16.2.60
+ip helper-address 172.16.2.58
+exit
+
+! Sous réseau de Gestion
+int Fa 0/0.99
+encapsulation dot1Q 99
+ip address 172.16.99.17 255.255.255.248
+exit
+
+router ospf 1
+network 172.16.10.0 0.0.0.63 area 0
+network 172.16.11.0 0.0.0.63 area 0
+network 172.16.12.0  0.0.0.63 area 0
+network 172.16.99.0 0.0.0.15 area 0
+network 10.0.0.8  0.0.0.7 area 0
+passive-interface fa0/1.10
+passive-interface fa0/1.11
+passive-interface fa0/1.12
+passive-interface fa0/1.99
+exit
+ip route 0.0.0.0 0.0.0.0 10.0.0.9
+
+ip http server
+ip http authentication local
+no ip http secure-server
+
+logging console
+ip domain-lookup
+ip name-server 172.16.2.61
+
+
+! ###################################################
+! ################## Config SNMP ####################
+! ###################################################
+
+snmp-server community EyesOfNetwork RO
+snmp-server host 172.16.2.56 EyesOfNetwork
+snmp-server host 172.16.2.59 EyesOfNetwork
+
+snmp-server enable traps flash insertion removal
+snmp-server enable traps cpu threshold
+snmp-server enable traps envmon fan shutdown supply temperature
+
+snmp-server enable traps snmp warmstart linkdown linkup coldstart
+snmp-server enable traps ospf state-change
+
+snmp-server enable traps config
+snmp-server enable traps config-copy
+
+end
+
+
+#####################################################
+################### RHSRP-PRI #######################
+#####################################################
+
+en
+conf t
+
+hostname HSRP-PRI
+no ip domain-lookup
+no logging console
+
+service password-encryption
+
+enable secret cisco
+ip domain-name m2l.fr
+username admin privilege 15 password admin
+
+line vty 0 4
+password cisco
+login local
+transport input ssh
+exit
+
+crypto key generate rsa
+1024
+
+ip ssh version 2
+ip ssh time-out 60
+ip ssh authentication-retries 2
+
+int fa 0/0
+ip address 10.0.0.5 255.255.255.248
+standby 10 ip 10.0.0.6
+standby 10 priority 105
+standby 10 preempt
+standby 10 track fa0/1
+ip nat inside
+no shutdown
+exit
+
+int fa 0/1
+ip address 221.87.149.1 255.255.255.252
+ip nat outside
+no shutdown
+exit
+
+ip route 0.0.0.0 0.0.0.0 221.87.149.2
+ip route 172.16.0.0 255.255.0.0 10.0.0.1
+ip route 192.168.0.0 255.255.255.0 10.0.0.1
+
+access-list 10 permit 172.16.0.0 0.0.255.255
+access-list 10 permit  192.168.0.0 0.0.0.255
+
+!########### regles invalider #####
+ip nat inside source list 10 interface fa0/1 overload
+
+! La redirection de port depend du cahier des charges
+! ip nat inside source static tcp 192.168.0.13 80 221.87.149.1 1627
+! ip nat inside source static tcp 192.168.0.13 443 221.87.149.1 2001
+! ip nat inside source static tcp 192.168.0.12 21 221.87.149.1 2010
+
+
+ip http server
+ip http authentication local
+no ip http secure-server
+
+logging console
+ip domain-lookup
+ip name-server 172.16.2.61
+
+
+! ###################################################
+! ################## Config SNMP ####################
+! ###################################################
+
+snmp-server community EyesOfNetwork RO
+snmp-server host 172.16.2.56 EyesOfNetwork
+snmp-server host 172.16.2.59 EyesOfNetwork
+
+snmp-server enable traps flash insertion removal
+snmp-server enable traps cpu threshold
+snmp-server enable traps envmon fan shutdown supply temperature
+
+snmp-server enable traps snmp warmstart linkdown linkup coldstart
+snmp-server enable traps hsrp
+snmp-server enable traps ospf state-change
+
+snmp-server enable traps config
+snmp-server enable traps config-copy
+
+exit
+
+
+#####################################################
+################## RHSRP-SEC ########################
+#####################################################
+
+en
+conf t
+
+hostname HSRP-SEC
+no ip domain-lookup
+no logging console
+
+service password-encryption
+
+enable secret cisco
+ip domain-name m2l.fr
+username admin privilege 15 password admin
+
+line vty 0 4
+password cisco
+login local
+transport input ssh
+exit
+
+crypto key generate rsa
+1024
+
+ip ssh version 2
+ip ssh time-out 60
+ip ssh authentication-retries 2
+
+int fa 0/0
+ip address 10.0.0.4 255.255.255.248
+standby 10 ip 10.0.0.6
+standby 10 preempt
+ip nat inside
+no shutdown
+exit
+
+int fa 0/1
+ip address 183.44.71.1 255.255.255.252
+ip nat outside
+no shutdown
+exit
+
+ip route 0.0.0.0 0.0.0.0 183.44.71.2
+ip route 172.16.0.0 255.255.0.0 10.0.0.1
+ip route 192.168.0.0 255.255.255.0 10.0.0.1
+
+access-list 10 permit 172.16.0.0 0.0.255.255
+access-list 10 permit 192.168.0.0 0.0.0.255
+
+!########## Regles invalider
+!ip nat inside source list 10 interface fa0/1 overload
+
+! La redirection de port depend du cahier des charges
+! ip nat inside source static tcp 192.168.0.13 80 183.44.71.1 1627
+! ip nat inside source static tcp 192.168.0.13 443 183.44.71.1 2001
+! ip nat inside source static tcp 192.168.0.12 21 183.44.71.1 2010
+
+
+ip http server
+ip http authentication local
+no ip http secure-server
+
+logging console
+ip domain-lookup
+ip name-server 172.16.2.61
+
+
+! ##################################################
+! ################## Config SNMP ###################
+! ##################################################
+
+snmp-server community EyesOfNetwork RO
+snmp-server host 172.16.2.56 EyesOfNetwork
+snmp-server host 172.16.2.59 EyesOfNetwork
+
+snmp-server enable traps flash insertion removal
+snmp-server enable traps cpu threshold
+snmp-server enable traps envmon fan shutdown supply temperature
+
+snmp-server enable traps snmp warmstart linkdown linkup coldstart
+snmp-server enable traps hsrp
+snmp-server enable traps ospf state-change
+
+snmp-server enable traps config
+snmp-server enable traps config-copy
+
+exit
+
+
+###################################################
+#################### RFAI MAQ1 ####################
+###################################################
+
+en
+conf t
+
+hostname RFAIMAQ4
+no ip domain-lookup
+no logging console
+
+service password-encryption
+
+enable secret cisco
+ip domain-name m2l.fr
+username admin privilege 15 password admin
+
+line vty 0 4
+password cisco
+login local
+transport input ssh
+exit
+
+crypto key generate rsa 
+1024
+
+ip ssh version 2
+ip ssh time-out 60
+ip ssh authentication-retries 2
+
+int fa 0/0
+ip address dhcp
+ip nat outside
+no shutdown
+exit
+
+int fa 0/1
+ip address 221.87.149.2 255.255.255.252
+ip nat inside
+no shutdown
+exit
+
+int e 1/0
+ip address 183.44.71.2 255.255.255.252
+ip nat inside
+no shutdown
+exit
+
+ip route 0.0.0.0 0.0.0.0 192.168.3.1
+
+! Le NAT/PAT
+access-list 10 permit 221.87.149.0 0.0.0.3
+access-list 10 permit 183.44.71.0 0.0.0.3
+
+ip nat inside source list 10 interface fa 0/0 overload
+
+! ip nat inside source static tcp 221.87.149.1 1627 172.17.5.253 1627
+! ip nat inside source static tcp 221.87.149.1 1630 172.17.5.253 2001
+! ip nat inside source static tcp 221.87.149.1 1992 172.17.5.253 2010
+
+
+ip http server
+
+logging console
+
+exit
+
+
+
+####################################################
+########################  SW1LIGUE #################
+####################################################
+
+en
+conf t
+
+hostname SW1LIGUE
+no ip domain-lookup
+no logging console
+
+service password-encryption
+
+no cdp run 
+vtp mode transparent
+
+enable secret cisco
+ip domain-name m2l.fr
+username admin privilege 15 password admin
+
+line vty 0 4
+password cisco
+login local
+transport input ssh
+exit
+
+crypto key generate rsa
+1024
+
+ip ssh version 2
+ip ssh time-out 60
+ip ssh authentication-retries 2
+
+VLAN 10
+name TENNIS
+exit
+
+VLAN 11
+name ATHLE
+exit
+
+VLAN 12
+name BASKET
+exit
+
+VLAN 99
+name GESTION
+exit
+
+int fa 0/1
+switchport mode trunk
+switchport nonegotiate
+exit
+
+
+int range fa 0/2 -3
+channel-group 1 mode active
+exit
+
+int port-channel1
+switchport mode trunk
+switchport nonegotiate
+exit
+
+int range fa 0/4 -5
+channel-group 2 mode active
+exit
+
+int port-channel2
+switchport mode trunk
+switchport nonegotiate
+exit
+
+
+int vlan 99
+ip address 172.16.99.18 255.255.255.248
+no shutdown
+exit
+
+ip default-gateway 172.16.99.17
+
+! ##############################################################
+! Config du Spanning-tree pour que SW1LIG soit le switch racine
+! ##############################################################
+spanning-tree vlan 1 root primary
+spanning-tree vlan 10-12 root primary
+spanning-tree vlan 99 root primary
+
+! ##############################################################
+ip http server
+ip http authentication local
+no ip http secure-server
+
+logging console
+ip domain-lookup
+ip name-server 172.16.2.61
+
+
+################################################
+################## Config SNMP #################
+################################################
+
+snmp-server community EyesOfNetwork RO
+snmp-server host 172.16.2.56 EyesOfNetwork
+snmp-server host 172.16.2.59 EyesOfNetwork
+
+snmp-server enable traps snmp authentication warmstart linkdown linkup coldstart
+snmp-server enable traps config
+snmp-server enable traps copy-config
+
+snmp-server enable traps flash insertion removal
+
+snmp-server enable traps c2900
+snmp-server enable traps vlancreate
+snmp-server enable traps vlandelete
+
+snmp-server enable traps envmon fan shutdown supply temperature
+
+exit
+
+
+#############################################
+################## SW2LIGUE #################
+#############################################
+
+en
+conf t
+
+hostname SW2LIGUE
+no ip domain-lookup
+no logging console
+
+service password-encryption
+
+no cdp run 
+vtp mode transparent
+
+enable secret cisco
+ip domain-name m2l.fr
+username admin privilege 15 password admin
+
+line vty 0 4
+password cisco
+login local
+transport input ssh
+exit
+
+crypto key generate rsa
+1024
+
+ip ssh version 2
+ip ssh time-out 60
+ip ssh authentication-retries 2
+
+VLAN 10
+name TENNIS
+exit
+
+VLAN 11
+name ATHLE
+exit
+
+VLAN 12
+name BASKET
+exit
+
+VLAN 99
+name GESTION
+exit
+
+int fa 0/1
+switchport mode trunk
+switchport nonegotiate
+exit
+
+int range fa 0/2 -3
+channel-group 1 mode active
+exit
+
+int port-channel1
+switchport mode trunk
+switchport nonegotiate
+exit
+
+int range fa 0/4 -14
+switchport mode access
+switchport access VLAN 10
+spanning-tree portfast
+exit
+
+int range fa 0/15 -22
+switchport mode access
+switchport access VLAN 11
+spanning-tree portfast
+exit
+
+int vlan 99
+ip address 172.16.99.19 255.255.255.248
+no shutdown
+exit
+
+ip default-gateway 172.16.99.17
+
+ip http server
+ip http authentication local
+no ip http secure-server
+
+logging console
+ip domain-lookup
+ip name-server 172.16.2.61
+
+
+! ################################################
+! ################## Config SNMP #################
+! ################################################
+
+snmp-server community EyesOfNetwork RO
+snmp-server host 172.16.2.56 EyesOfNetwork
+snmp-server host 172.16.2.59 EyesOfNetwork
+
+snmp-server enable traps snmp authentication warmstart linkdown linkup coldstart
+snmp-server enable traps config
+snmp-server enable traps copy-config
+
+snmp-server enable traps flash insertion removal
+
+snmp-server enable traps c2900
+snmp-server enable traps vlancreate
+snmp-server enable traps vlandelete
+
+snmp-server enable traps envmon fan shutdown supply temperature
+
+exit
+
+##################################################
+################# SW3LIGUE #######################
+##################################################
+
+en
+conf t
+
+hostname SW3LIGUE
+no ip domain-lookup
+no logging console
+
+service password-encryption
+
+no cdp run 
+vtp mode transparent
+
+enable secret cisco
+ip domain-name m2l.fr
+username admin privilege 15 password admin
+
+line vty 0 4
+password cisco
+login local
+transport input ssh
+exit
+
+crypto key generate rsa
+1024
+
+ip ssh version 2
+ip ssh time-out 60
+ip ssh authentication-retries 2
+
+VLAN 10
+name TENNIS
+exit
+
+VLAN 11
+name ATHLE
+exit
+
+VLAN 12
+name BASKET
+exit
+
+VLAN 99
+name GESTION
+exit
+
+int fa 0/1
+switchport mode trunk
+switchport nonegotiate
+exit
+
+int range fa 0/2 -3
+channel-group 2 mode active
+exit
+
+int port-channel2
+switchport mode trunk
+switchport nonegotiate
+exit
+
+int range fa 0/4 -14
+switchport mode access
+switchport access VLAN 12
+spanning-tree portfast
+exit
+
+int vlan 99
+ip address 172.16.99.20 255.255.255.248
+no shutdown
+exit
+
+ip default-gateway 172.16.99.17
+
+ip http server
+ip http authentication local
+no ip http secure-server
+
+logging console
+ip domain-lookup
+ip name-server 172.16.2.61
+
+
+! ###################################################
+! ################## Config SNMP ####################
+! ###################################################
+
+snmp-server community EyesOfNetwork RO
+snmp-server host 172.16.2.56 EyesOfNetwork
+snmp-server host 172.16.2.59 EyesOfNetwork
+
+snmp-server enable traps snmp authentication warmstart linkdown linkup coldstart
+snmp-server enable traps config
+snmp-server enable traps copy-config
+
+snmp-server enable traps flash insertion removal
+
+snmp-server enable traps c2900
+snmp-server enable traps vlancreate
+snmp-server enable traps vlandelete
+
+snmp-server enable traps envmon fan shutdown supply temperature
+
+exit
+
+
+################################################
+##################### SWM2L ####################
+################################################
+
+en
+conf t
+
+hostname SW1M2L
+no ip domain-lookup
+no logging console
+
+service password-encryption
+
+no cdp run 
+vtp mode transparent
+
+enable secret cisco
+ip domain-name m2l.fr
+username admin privilege 15 password admin
+
+line vty 0 4
+password cisco
+login local
+transport input ssh
+exit
+
+crypto key generate rsa
+1024
+
+ip ssh version 2
+ip ssh time-out 60
+ip ssh authentication-retries 2
+
+VLAN 2
+name INFO
+exit
+
+VLAN 3 
+name ADMIN
+exit
+
+VLAN 99
+name GESTION
+exit
+
+int range fa0/23 -24
+switchport mode trunk
+switchport nonegotiate
+exit
+
+int range fa 0/1 -14
+switchport mode access
+switchport access VLAN 2
+spanning-tree portfast
+exit
+
+int range fa 0/15 -22
+switchport mode access
+switchport access VLAN 3
+spanning-tree portfast
+exit
+
+int vlan 99
+ip address 172.16.99.17 255.255.255.248
+no shutdown
+exit
+
+ip default-gateway 172.16.99.22
+
+ip http server
+ip http authentication local
+no ip http secure-server
+
+logging console
+ip domain-lookup
+ip name-server 172.16.2.61
+
+
+! ###################################################
+! ################## Config SNMP ####################
+! ###################################################
+
+snmp-server community EyesOfNetwork RO
+snmp-server host 172.16.2.56 EyesOfNetwork
+snmp-server host 172.16.2.59 EyesOfNetwork
+
+snmp-server enable traps snmp authentication warmstart linkdown linkup coldstart
+snmp-server enable traps config
+snmp-server enable traps copy-config
+
+snmp-server enable traps flash insertion removal
+
+snmp-server enable traps c2900
+snmp-server enable traps vlancreate
+snmp-server enable traps vlandelete
+
+snmp-server enable traps envmon fan shutdown supply temperature
+
+
+exit
+
+
+##################################################
+##################### SW WIFI ####################
+##################################################
+
+
+en
+conf t
+
+hostname SWIFI
+no ip domain-lookup
+no logging console
+
+no cdp run 
+vtp mode transparent
+
+enable secret cisco
+
+VLAN 100
+name visiteurs 
+exit
+
+VLAN 101 
+name Employes 
+exit
+
+VLAN 99
+name GESTION
+exit
+
+! Liaison avec le PA WIFI
+int Fa 0/23
+switchport trunk encapsulation dot1q
+switchport mode trunk
+switchport trunk native vlan 99
+switchport nonegotiate
+exit
+
+! Liaison avec le Routeur
+int Fa 0/24
+switchport trunk encapsulation dot1q
+switchport mode trunk
+switchport nonegotiate
+exit
+
+int range fa 0/1 -9
+switchport mode access
+switchport access VLAN 100
+spanning-tree portfast
+exit
+
+int range fa 0/10 -17
+switchport mode access
+switchport access VLAN 101
+spanning-tree portfast
+exit
+
+int vlan 99
+ip address 172.16.99.26 255.255.255.248
+no shutdown
+exit
+
+ip default-gateway 172.16.99.25
+
+logging console
+ip domain-lookup
+ip name-server 172.16.2.61
+
+
+! ###################################################
+! ################## Config SNMP ####################
+! ###################################################
+
+snmp-server community EyesOfNetwork RO
+snmp-server host 172.16.2.56 EyesOfNetwork
+snmp-server host 172.16.2.59 EyesOfNetwork
+
+snmp-server enable traps snmp authentication warmstart linkdown linkup coldstart
+snmp-server enable traps config
+snmp-server enable traps copy-config
+
+snmp-server enable traps flash insertion removal
+
+snmp-server enable traps c2900
+snmp-server enable traps vlancreate
+snmp-server enable traps vlandelete
+
+snmp-server enable traps envmon fan shutdown supply temperature
+
+
+exit
+
+
+
+#####################################################
+#################### PA WIFI ########################
+#####################################################
+
+en
+conf t
+
+service password-encryption
+!
+hostname M2L-WIFI
+!
+enable secret cisco
+!
+ip subnet-zero
+ip domain name m2l.lan
+!
+username admin privilege 15 password admin
+!
+line vty 0 4
+password cisco
+login local
+transport input ssh
+exit
+
+crypto key generate rsa
+1024
+
+ip ssh version 2
+ip ssh time-out 60
+ip ssh authentication-retries 2
+
+no aaa new-model
+dot11 vlan-name EmployesMaq1 vlan 101
+dot11 vlan-name Gestion vlan 99
+dot11 vlan-name Visiteurs vlan 100
+!
+dot11 ssid EmployesMaq1
+   vlan 101
+   authentication open
+   authentication key-management wpa
+   wpa-psk ascii 7 Btssio2015
+!
+dot11 ssid Gestion
+   vlan 99
+   authentication open
+   authentication key-management wpa
+   wpa-psk ascii 7 Btssio2015
+!
+dot11 ssid Visiteurs
+   vlan 100
+   authentication open
+   guest-mode
+!
+bridge irb
+!
+!
+interface Dot11Radio0
+ no ip address
+ no ip route-cache
+ !
+ encryption mode ciphers aes-ccm
+ !
+ encryption vlan 101 mode ciphers aes-ccm
+ !
+ encryption vlan 99 mode ciphers aes-ccm
+ !
+ ssid EmployesMaq1
+ !
+ ssid Gestion
+ !
+ ssid Visiteurs
+ !
+ station-role root
+!
+interface Dot11Radio0.99
+ encapsulation dot1Q 99 native
+ no ip route-cache
+ bridge-group 1
+ bridge-group 1 subscriber-loop-control
+ bridge-group 1 block-unknown-source
+ no bridge-group 1 source-learning
+ no bridge-group 1 unicast-flooding
+ bridge-group 1 spanning-disabled
+!
+interface Dot11Radio0.100
+ encapsulation dot1Q 100
+ no ip route-cache
+ bridge-group 100
+ bridge-group 100 subscriber-loop-control
+ bridge-group 100 block-unknown-source
+ no bridge-group 100 source-learning
+ no bridge-group 100 unicast-flooding
+ bridge-group 100 spanning-disabled
+!
+interface Dot11Radio0.101
+ encapsulation dot1Q 101
+ no ip route-cache
+ bridge-group 101
+ bridge-group 101 subscriber-loop-control
+ bridge-group 101 block-unknown-source
+ no bridge-group 101 source-learning
+ no bridge-group 101 unicast-flooding
+ bridge-group 101 spanning-disabled
+!
+interface FastEthernet0
+ no ip address
+ no ip route-cache
+ duplex auto
+ speed auto
+ hold-queue 160 in
+!
+interface FastEthernet0.99
+ encapsulation dot1Q 99 native
+ no ip route-cache
+ bridge-group 1
+ no bridge-group 1 source-learning
+ bridge-group 1 spanning-disabled
+!
+interface FastEthernet0.100
+ encapsulation dot1Q 100
+ no ip route-cache
+ bridge-group 100
+ no bridge-group 100 source-learning
+ bridge-group 100 spanning-disabled
+!
+interface FastEthernet0.101
+ encapsulation dot1Q 101
+ no ip route-cache
+ bridge-group 101
+ no bridge-group 101 source-learning
+ bridge-group 101 spanning-disabled
+!
+interface BVI1
+ ip address 172.16.99.29 255.255.255.248
+ no ip route-cache
+!
+ip default-gateway 172.16.99.30
+ip http server
+ip http authentication local
+no ip http secure-server
+!
+!
+control-plane
+!
+bridge 1 route ip
+
+
+logging console
+ip domain-lookup
+ip name-server 172.16.2.61
+
+end
+
