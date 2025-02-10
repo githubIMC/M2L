@@ -272,18 +272,18 @@ ip ssh time-out 60
 ip ssh authentication-retries 2
 
 ! Interconnexion avec RM2L
-int Fa 0/1
+int Fa 0/0
 ip address 10.0.0.10 255.255.255.248
 no shutdown
 exit
 
 ! Sous Reseaux LIGUES
-int Fa 0/0
+int Fa 0/1
 no shutdown
 exit
 
 ! Sous réseau TENNIS 
-int Fa 0/0.10
+int Fa 0/1.10
 encapsulation dot1Q 10
 ip address 172.16.10.62 255.255.255.192
 ip helper-address 172.16.2.61
@@ -292,7 +292,7 @@ ip helper-address 172.16.2.58
 exit
 
 ! Sous réseau ATHLE
-int Fa 0/0.11
+int Fa 0/1.11
 encapsulation dot1Q 11
 ip address 172.16.11.62 255.255.255.192
 ip helper-address 172.16.2.61
@@ -301,7 +301,7 @@ ip helper-address 172.16.2.58
 exit
 
 ! Sous réseau BASKET 
-int Fa 0/0.12
+int Fa 0/1.12
 encapsulation dot1Q 12
 ip address 172.16.12.62 255.255.255.192
 ip helper-address 172.16.2.61
@@ -310,7 +310,7 @@ ip helper-address 172.16.2.58
 exit
 
 ! Sous réseau de Gestion
-int Fa 0/0.99
+int Fa 0/1.99
 encapsulation dot1Q 99
 ip address 172.16.99.17 255.255.255.248
 exit
