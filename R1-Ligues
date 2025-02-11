@@ -1,66 +1,24 @@
 service password-encryption
-!
+
 hostname LIG-R1
-!
-boot-start-marker
-boot-end-marker
-!
 no logging console
 enable secret 5 cisco
-!
-no aaa new-model
-dot11 syslog
-ip cef
-!
-!
-!
-!
+
 ip domain name m2l.lan
 ip name-server 172.16.2.61
-multilink bundle-name authenticated
-!
-!
-voice-card 0
-!
-!
-!
-!
-!
-!
-!
-!
-!
-!
-!
-!
-!
-!
-!
-!
-!
-!
-!
-!
-spanning-tree vlan 16 priority 8192
-username admin privilege 15 password 7 admin
-archive
- log config
-  hidekeys
-!
-!
+
+username admin privilege 15 password admin
+
 ip ssh time-out 60
 ip ssh authentication-retries 2
 ip ssh version 2
-!
-!
-!
-!
+
 interface FastEthernet0/0
  description INTERCO_M2L-R1
  ip address 10.0.0.10 255.255.255.248
  duplex auto
  speed auto
-!
+
 
 interface FastEthernet0/1
  description INTERCO_LIG-SW1
