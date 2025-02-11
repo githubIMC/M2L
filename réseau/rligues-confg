@@ -9,6 +9,8 @@ ip name-server 172.16.2.61
 
 username admin privilege 15 password admin
 
+crypto key generate rsa
+1024
 
 ip ssh time-out 60
 ip ssh authentication-retries 2
