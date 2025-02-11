@@ -1,0 +1,156 @@
+service password-encryption
+
+hostname LIG-R1
+no logging console
+enable secret cisco
+
+ip domain name m2l.lan
+ip name-server 172.16.2.61
+
+username admin privilege 15 password admin
+
+
+ip ssh time-out 60
+ip ssh authentication-retries 2
+ip ssh version 2
+
+interface FastEthernet0/0
+ description INTERCO_M2L-R1
+ ip address 10.0.0.10 255.255.255.248
+ no shutdown
+ duplex auto
+ speed auto
+
+
+interface FastEthernet0/1
+ description INTERCO_LIG-SW1
+ no ip address
+ no shutdown
+ duplex auto
+ speed auto
+
+interface FastEthernet0/1.10
+ description GW_VLAN-TENNIS
+ encapsulation dot1Q 10
+ ip address 172.16.10.62 255.255.255.192
+ ip helper-address 172.16.2.61
+ ip helper-address 172.16.2.58
+
+interface FastEthernet0/1.11
+ description GW_VLAN-ATHLE
+ encapsulation dot1Q 11
+ ip address 172.16.11.62 255.255.255.192
+ ip helper-address 172.16.2.61
+ ip helper-address 172.16.2.58
+
+interface FastEthernet0/1.12
+ description GW_VLAN-BASKET
+ encapsulation dot1Q 12
+ ip address 172.16.12.62 255.255.255.192
+ ip helper-address 172.16.2.61
+ ip helper-address 172.16.2.58
+
+interface FastEthernet0/1.99
+ description IP-MGMT
+ encapsulation dot1Q 99
+ ip address 172.16.99.17 255.255.255.248
+
+router ospf 1
+ log-adjacency-changes
+ passive-interface FastEthernet0/1.10
+ passive-interface FastEthernet0/1.11
+ passive-interface FastEthernet0/1.12
+ passive-interface FastEthernet0/1.99
+ network 10.0.0.8 0.0.0.7 area 0
+ network 172.16.10.0 0.0.0.63 area 0
+ network 172.16.11.0 0.0.0.63 area 0
+ network 172.16.12.0 0.0.0.63 area 0
+ network 172.16.99.16 0.0.0.15 area 0
+
+ip route 0.0.0.0 0.0.0.0 10.0.0.9
+
+ip http server
+ip http authentication local
+no ip http secure-server
+
+snmp-server community EyesOfNetwork RO
+snmp-server enable traps snmp authentication linkdown linkup coldstart warmstart
+snmp-server enable traps vrrp
+snmp-server enable traps ds1
+snmp-server enable traps tty
+snmp-server enable traps eigrp
+snmp-server enable traps xgcp
+snmp-server enable traps envmon
+snmp-server enable traps flash insertion removal
+snmp-server enable traps icsudsu
+snmp-server enable traps isdn call-information
+snmp-server enable traps isdn layer2
+snmp-server enable traps isdn chan-not-avail
+snmp-server enable traps isdn ietf
+snmp-server enable traps ds0-busyout
+snmp-server enable traps ds1-loopback
+snmp-server enable traps ethernet cfm cc mep-up mep-down cross-connect loop config
+snmp-server enable traps ethernet cfm crosscheck mep-missing mep-unknown service-up
+snmp-server enable traps disassociate
+snmp-server enable traps deauthenticate
+snmp-server enable traps authenticate-fail
+snmp-server enable traps dot11-qos
+snmp-server enable traps switch-over
+snmp-server enable traps rogue-ap
+snmp-server enable traps wlan-wep
+snmp-server enable traps aaa_server
+snmp-server enable traps atm subif
+snmp-server enable traps bgp
+snmp-server enable traps bulkstat collection transfer
+snmp-server enable traps memory bufferpeak
+snmp-server enable traps cnpd
+snmp-server enable traps config-copy
+snmp-server enable traps config
+snmp-server enable traps dial
+snmp-server enable traps dsp card-status
+snmp-server enable traps dsp oper-state
+snmp-server enable traps entity
+snmp-server enable traps fru-ctrl
+snmp-server enable traps resource-policy
+snmp-server enable traps event-manager
+snmp-server enable traps frame-relay multilink bundle-mismatch
+snmp-server enable traps frame-relay
+snmp-server enable traps frame-relay subif
+snmp-server enable traps hsrp
+snmp-server enable traps ipmulticast
+snmp-server enable traps mpls ldp
+snmp-server enable traps mpls traffic-eng
+snmp-server enable traps mpls vpn
+snmp-server enable traps msdp
+snmp-server enable traps mvpn
+snmp-server enable traps ospf state-change
+snmp-server enable traps ospf errors
+snmp-server enable traps ospf retransmit
+snmp-server enable traps ospf lsa
+snmp-server enable traps ospf cisco-specific state-change nssa-trans-change
+snmp-server enable traps ospf cisco-specific state-change shamlink interface-old
+snmp-server enable traps ospf cisco-specific state-change shamlink neighbor
+snmp-server enable traps ospf cisco-specific errors
+snmp-server enable traps ospf cisco-specific retransmit
+snmp-server enable traps ospf cisco-specific lsa
+snmp-server enable traps pim neighbor-change rp-mapping-change invalid-pim-message
+snmp-server enable traps pppoe
+snmp-server enable traps cpu threshold
+snmp-server enable traps rsvp
+snmp-server enable traps ipsla
+snmp-server enable traps syslog
+snmp-server enable traps l2tun session
+snmp-server enable traps l2tun pseudowire status
+snmp-server enable traps vtp
+snmp-server enable traps pw vc
+snmp-server enable traps ccme
+snmp-server enable traps srst
+snmp-server enable traps voice
+snmp-server enable traps dnis
+snmp-server host 172.16.2.59 EyesOfNetwork
+
+line vty 0 4
+ password cisco
+ login local
+ transport input ssh
+end
