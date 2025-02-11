@@ -1,0 +1,63 @@
+###################################################
+#################### RFAI MAQ1 ####################
+###################################################
+
+hostname RFAI
+no ip domain-lookup
+no logging console
+
+service password-encryption
+
+enable secret cisco
+ip domain-name m2l.lan
+username admin privilege 15 password admin
+
+line vty 0 4
+password cisco
+login local
+transport input ssh
+exit
+
+crypto key generate rsa 
+1024
+
+ip ssh version 2
+ip ssh time-out 60
+ip ssh authentication-retries 2
+
+int fa 0/0
+ip address dhcp
+ip nat outside
+no shutdown
+exit
+
+int fa 0/1
+ip address 221.87.149.2 255.255.255.252
+ip nat inside
+no shutdown
+exit
+
+int e 1/0
+ip address 183.44.71.2 255.255.255.252
+ip nat inside
+no shutdown
+exit
+
+ip route 0.0.0.0 0.0.0.0 192.168.3.1
+
+! Le NAT/PAT
+access-list 10 permit 221.87.149.0 0.0.0.3
+access-list 10 permit 183.44.71.0 0.0.0.3
+
+ip nat inside source list 10 interface fa 0/0 overload
+
+! ip nat inside source static tcp 221.87.149.1 1627 172.17.5.253 1627
+! ip nat inside source static tcp 221.87.149.1 1630 172.17.5.253 2001
+! ip nat inside source static tcp 221.87.149.1 1992 172.17.5.253 2010
+
+
+ip http server
+
+logging console
+
+exit
