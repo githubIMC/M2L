@@ -1,0 +1,86 @@
+##################################################
+##################### SW WIFI ####################
+##################################################
+
+hostname SWIFI
+no ip domain-lookup
+no logging console
+
+no cdp run 
+vtp mode transparent
+
+enable secret cisco
+
+VLAN 100
+name visiteurs 
+exit
+
+VLAN 101 
+name Employes 
+exit
+
+VLAN 99
+name GESTION
+exit
+
+! Liaison avec le PA WIFI
+int Fa 0/23
+switchport trunk encapsulation dot1q
+switchport mode trunk
+switchport trunk native vlan 99
+switchport nonegotiate
+exit
+
+! Liaison avec le Routeur
+int Fa 0/24
+switchport trunk encapsulation dot1q
+switchport mode trunk
+switchport nonegotiate
+exit
+
+int range fa 0/1 -9
+switchport mode access
+switchport access VLAN 100
+spanning-tree portfast
+exit
+
+int range fa 0/10 -17
+switchport mode access
+switchport access VLAN 101
+spanning-tree portfast
+exit
+
+int vlan 99
+ip address 172.16.99.26 255.255.255.248
+no shutdown
+exit
+
+ip default-gateway 172.16.99.25
+
+logging console
+ip domain-lookup
+ip name-server 172.16.2.61
+
+
+! ###################################################
+! ################## Config SNMP ####################
+! ###################################################
+
+snmp-server community EyesOfNetwork RO
+snmp-server host 172.16.2.56 EyesOfNetwork
+snmp-server host 172.16.2.59 EyesOfNetwork
+
+snmp-server enable traps snmp authentication warmstart linkdown linkup coldstart
+snmp-server enable traps config
+snmp-server enable traps copy-config
+
+snmp-server enable traps flash insertion removal
+
+snmp-server enable traps c2900
+snmp-server enable traps vlancreate
+snmp-server enable traps vlandelete
+
+snmp-server enable traps envmon fan shutdown supply temperature
+
+
+exit
