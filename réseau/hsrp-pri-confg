@@ -1,0 +1,84 @@
+hostname HSRP-PRI
+no ip domain-lookup
+no logging console
+
+service password-encryption
+
+enable secret cisco
+ip domain-name m2l.lan
+username admin privilege 15 password admin
+
+line vty 0 4
+password cisco
+login local
+transport input ssh
+exit
+
+crypto key generate rsa
+1024
+
+ip ssh version 2
+ip ssh time-out 60
+ip ssh authentication-retries 2
+
+int fa 0/0
+ip address 10.0.0.5 255.255.255.248
+standby 10 ip 10.0.0.6
+standby 10 priority 105
+standby 10 preempt
+standby 10 track fa0/1
+ip nat inside
+no shutdown
+exit
+
+int fa 0/1
+ip address 221.87.149.1 255.255.255.252
+ip nat outside
+no shutdown
+exit
+
+ip route 0.0.0.0 0.0.0.0 221.87.149.2
+ip route 172.16.0.0 255.255.0.0 10.0.0.1
+ip route 192.168.0.0 255.255.255.0 10.0.0.1
+
+access-list 10 permit 172.16.0.0 0.0.255.255
+access-list 10 permit  192.168.0.0 0.0.0.255
+
+!########### regles invalider #####
+ip nat inside source list 10 interface fa0/1 overload
+
+! La redirection de port depend du cahier des charges
+! ip nat inside source static tcp 192.168.0.13 80 221.87.149.1 1627
+! ip nat inside source static tcp 192.168.0.13 443 221.87.149.1 2001
+! ip nat inside source static tcp 192.168.0.12 21 221.87.149.1 2010
+
+
+ip http server
+ip http authentication local
+no ip http secure-server
+
+logging console
+ip domain-lookup
+ip name-server 172.16.2.61
+
+
+! ###################################################
+! ################## Config SNMP ####################
+! ###################################################
+
+snmp-server community EyesOfNetwork RO
+snmp-server host 172.16.2.56 EyesOfNetwork
+snmp-server host 172.16.2.59 EyesOfNetwork
+
+snmp-server enable traps flash insertion removal
+snmp-server enable traps cpu threshold
+snmp-server enable traps envmon fan shutdown supply temperature
+
+snmp-server enable traps snmp warmstart linkdown linkup coldstart
+snmp-server enable traps hsrp
+snmp-server enable traps ospf state-change
+
+snmp-server enable traps config
+snmp-server enable traps config-copy
+
+exit
