@@ -1,0 +1,149 @@
+#####################################################
+#################### PA WIFI ########################
+#####################################################
+
+service password-encryption
+!
+hostname PA-WIFI
+!
+enable secret cisco
+!
+ip subnet-zero
+ip domain name m2l.lan
+!
+username admin privilege 15 password admin
+!
+line vty 0 4
+password cisco
+login local
+transport input ssh
+exit
+
+crypto key generate rsa
+1024
+
+ip ssh version 2
+ip ssh time-out 60
+ip ssh authentication-retries 2
+
+no aaa new-model
+dot11 vlan-name EmployesMaq1 vlan 101
+dot11 vlan-name Gestion vlan 99
+dot11 vlan-name Visiteurs vlan 100
+!
+dot11 ssid EmployesMaq1
+   vlan 101
+   authentication open
+   authentication key-management wpa
+   wpa-psk ascii 7 Btssio2015
+!
+dot11 ssid Gestion
+   vlan 99
+   authentication open
+   authentication key-management wpa
+   wpa-psk ascii 7 Btssio2015
+!
+dot11 ssid Visiteurs
+   vlan 100
+   authentication open
+   guest-mode
+!
+bridge irb
+!
+!
+interface Dot11Radio0
+ no ip address
+ no ip route-cache
+ !
+ encryption mode ciphers aes-ccm
+ !
+ encryption vlan 101 mode ciphers aes-ccm
+ !
+ encryption vlan 99 mode ciphers aes-ccm
+ !
+ ssid EmployesMaq1
+ !
+ ssid Gestion
+ !
+ ssid Visiteurs
+ !
+ station-role root
+!
+interface Dot11Radio0.99
+ encapsulation dot1Q 99 native
+ no ip route-cache
+ bridge-group 1
+ bridge-group 1 subscriber-loop-control
+ bridge-group 1 block-unknown-source
+ no bridge-group 1 source-learning
+ no bridge-group 1 unicast-flooding
+ bridge-group 1 spanning-disabled
+!
+interface Dot11Radio0.100
+ encapsulation dot1Q 100
+ no ip route-cache
+ bridge-group 100
+ bridge-group 100 subscriber-loop-control
+ bridge-group 100 block-unknown-source
+ no bridge-group 100 source-learning
+ no bridge-group 100 unicast-flooding
+ bridge-group 100 spanning-disabled
+!
+interface Dot11Radio0.101
+ encapsulation dot1Q 101
+ no ip route-cache
+ bridge-group 101
+ bridge-group 101 subscriber-loop-control
+ bridge-group 101 block-unknown-source
+ no bridge-group 101 source-learning
+ no bridge-group 101 unicast-flooding
+ bridge-group 101 spanning-disabled
+!
+interface FastEthernet0
+ no ip address
+ no ip route-cache
+ duplex auto
+ speed auto
+ hold-queue 160 in
+!
+interface FastEthernet0.99
+ encapsulation dot1Q 99 native
+ no ip route-cache
+ bridge-group 1
+ no bridge-group 1 source-learning
+ bridge-group 1 spanning-disabled
+!
+interface FastEthernet0.100
+ encapsulation dot1Q 100
+ no ip route-cache
+ bridge-group 100
+ no bridge-group 100 source-learning
+ bridge-group 100 spanning-disabled
+!
+interface FastEthernet0.101
+ encapsulation dot1Q 101
+ no ip route-cache
+ bridge-group 101
+ no bridge-group 101 source-learning
+ bridge-group 101 spanning-disabled
+!
+interface BVI1
+ ip address 172.16.99.29 255.255.255.248
+ no ip route-cache
+!
+ip default-gateway 172.16.99.30
+ip http server
+ip http authentication local
+no ip http secure-server
+!
+!
+control-plane
+!
+bridge 1 route ip
+
+
+logging console
+ip domain-lookup
+ip name-server 172.16.2.61
+
+end
