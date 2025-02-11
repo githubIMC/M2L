@@ -1,0 +1,112 @@
+hostname SW1LIGUE
+no ip domain-lookup
+no logging console
+
+service password-encryption
+
+no cdp run
+vtp mode transparent
+
+enable secret cisco
+ip domain-name m2l.lan
+username admin privilege 15 password admin
+
+line vty 0 4
+password cisco
+login local
+transport input ssh
+exit
+
+crypto key generate rsa
+1024
+
+ip ssh version 2
+ip ssh time-out 60
+ip ssh authentication-retries 2
+
+VLAN 10
+name TENNIS
+exit
+
+VLAN 11
+name ATHLE
+exit
+
+VLAN 12
+name BASKET
+exit
+
+VLAN 99
+name GESTION
+exit
+
+int fa 0/1
+switchport mode trunk
+switchport nonegotiate
+exit
+
+
+int range fa 0/2 -3
+channel-group 1 mode active
+exit
+
+int port-channel1
+switchport mode trunk
+switchport nonegotiate
+exit
+
+int range fa 0/4 -5
+channel-group 2 mode active
+exit
+
+int port-channel2
+switchport mode trunk
+switchport nonegotiate
+exit
+
+
+int vlan 99
+ip address 172.16.99.18 255.255.255.248
+no shutdown
+exit
+
+ip default-gateway 172.16.99.17
+
+! ##############################################################
+! Config du Spanning-tree pour que SW1LIG soit le switch racine
+! ##############################################################
+spanning-tree vlan 1 root primary
+spanning-tree vlan 10-12 root primary
+spanning-tree vlan 99 root primary
+
+! ##############################################################
+ip http server
+ip http authentication local
+no ip http secure-server
+
+logging console
+ip domain-lookup
+ip name-server 172.16.2.61
+
+
+################################################
+################## Config SNMP #################
+################################################
+
+snmp-server community EyesOfNetwork RO
+snmp-server host 172.16.2.56 EyesOfNetwork
+snmp-server host 172.16.2.59 EyesOfNetwork
+
+snmp-server enable traps snmp authentication warmstart linkdown linkup coldstart
+snmp-server enable traps config
+snmp-server enable traps copy-config
+
+snmp-server enable traps flash insertion removal
+
+snmp-server enable traps c2900
+snmp-server enable traps vlancreate
+snmp-server enable traps vlandelete
+
+snmp-server enable traps envmon fan shutdown supply temperature
+
+
