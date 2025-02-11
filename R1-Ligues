@@ -2,7 +2,7 @@ service password-encryption
 
 hostname LIG-R1
 no logging console
-enable secret 5 cisco
+enable secret cisco
 
 ip domain name m2l.lan
 ip name-server 172.16.2.61
@@ -16,6 +16,7 @@ ip ssh version 2
 interface FastEthernet0/0
  description INTERCO_M2L-R1
  ip address 10.0.0.10 255.255.255.248
+ no shutdown
  duplex auto
  speed auto
 
@@ -23,35 +24,36 @@ interface FastEthernet0/0
 interface FastEthernet0/1
  description INTERCO_LIG-SW1
  no ip address
+ no shutdown
  duplex auto
  speed auto
-!
+
 interface FastEthernet0/1.10
  description GW_VLAN-TENNIS
  encapsulation dot1Q 10
  ip address 172.16.10.62 255.255.255.192
  ip helper-address 172.16.2.61
  ip helper-address 172.16.2.58
-!
+
 interface FastEthernet0/1.11
  description GW_VLAN-ATHLE
  encapsulation dot1Q 11
  ip address 172.16.11.62 255.255.255.192
  ip helper-address 172.16.2.61
  ip helper-address 172.16.2.58
-!
+
 interface FastEthernet0/1.12
  description GW_VLAN-BASKET
  encapsulation dot1Q 12
  ip address 172.16.12.62 255.255.255.192
  ip helper-address 172.16.2.61
  ip helper-address 172.16.2.58
-!
+
 interface FastEthernet0/1.99
  description IP-MGMT
  encapsulation dot1Q 99
  ip address 172.16.99.17 255.255.255.248
-!
+
 router ospf 1
  log-adjacency-changes
  passive-interface FastEthernet0/1.10
@@ -62,21 +64,14 @@ router ospf 1
  network 172.16.10.0 0.0.0.63 area 0
  network 172.16.11.0 0.0.0.63 area 0
  network 172.16.12.0 0.0.0.63 area 0
- network 172.16.15.0 0.0.0.7 area 0
- network 172.16.16.0 0.0.0.15 area 0
- network 172.16.18.0 0.0.0.7 area 0
- network 172.16.18.56 0.0.0.7 area 0
- network 172.16.18.64 0.0.0.7 area 0
  network 172.16.99.16 0.0.0.15 area 0
-!
-ip forward-protocol nd
+
 ip route 0.0.0.0 0.0.0.0 10.0.0.9
-!
-!
+
 ip http server
 ip http authentication local
 no ip http secure-server
-!
+
 snmp-server community EyesOfNetwork RO
 snmp-server enable traps snmp authentication linkdown linkup coldstart warmstart
 snmp-server enable traps vrrp
@@ -152,24 +147,9 @@ snmp-server enable traps srst
 snmp-server enable traps voice
 snmp-server enable traps dnis
 snmp-server host 172.16.2.59 EyesOfNetwork
-!
-!
-control-plane
-!
-!
-!
-!
-!
-!
-!
-!
-!
-line con 0
-line aux 0
+
 line vty 0 4
- password 7 060506324F41
+ password cisco
  login local
  transport input ssh
-!
-scheduler allocate 20000 1000
 end
