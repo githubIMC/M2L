@@ -1,0 +1,21 @@
+!
+!
+control-plane
+!
+!
+!
+!
+!
+!
+!
+!
+!
+line con 0
+line aux 0
+line vty 0 4
+ password 7 060506324F41
+ login local
+ transport input ssh
+!
+scheduler allocate 20000 1000
+end
