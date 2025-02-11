@@ -12,7 +12,7 @@ no cdp run
 vtp mode transparent
 
 enable secret cisco
-ip domain-name m2l.fr
+ip domain-name m2l.lan
 username admin privilege 15 password admin
 
 line vty 0 4
