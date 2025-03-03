@@ -2,9 +2,9 @@ service password-encryption
 !
 hostname M2L-SW1
 !
-enable secret 5 $1$prXF$6y441spwscuLcFPFA8nEN.
+enable secret cico
 !
-username admin privilege 15 password 7 11081D081E1C
+username admin privilege 15 password admin
 no aaa new-model
 vtp mode transparent
 ip subnet-zero
@@ -196,7 +196,7 @@ control-plane
 !
 line con 0
 line vty 0 4
- password 7 030752180500
+ password admin
  login local
  transport input ssh
 line vty 5 15
