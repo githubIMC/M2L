@@ -73,7 +73,7 @@ exit
 ! Gestion
 int fa0/0.99
 encapsulation dot1Q 99
-ip address 172.16.99.22 255.255.255.248
+ip address 172.16.99.1 255.255.255.240
 exit
 
 ! ##############################
