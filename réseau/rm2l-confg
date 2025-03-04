@@ -1,163 +1,164 @@
-######################################################
-###################  Routeur M2L  ####################
-######################################################
 
-hostname RM2L
-no ip domain-lookup
-no logging console
-
+!
+version 12.4
+service timestamps debug datetime msec
+service timestamps log datetime msec
 service password-encryption
-
-! #####################################################
-! La configuration Administration a distance securisee
-! #####################################################
-enable secret cisco
-ip domain-name m2l.lan
-username admin privilege 15 password admin
-
-line vty 0 4	
-password cisco
-login local
-transport input ssh
-exit
-
-crypto key generate rsa
-1024
-
-ip ssh version 2
-ip ssh time-out 60
-ip ssh authentication-retries 2
-
-! #####################################
-! Sous Réseau Interconnexion avec RLIG
-! #####################################
-
-int e1/3
-ip address 10.0.0.9 255.255.255.248
-no shutdown
-exit
-
-! Interconnexion avec RHSRP
-int fa 0/1
-ip address 10.0.0.1 255.255.255.248
-! ip access-group 100 in
-no shutdown
-exit
-
-! Interconnexion avec DMZ
-int e1/0
-ip address 192.168.0.14 255.255.255.240
-no shutdown
-exit
-
-! Sous reseaux VLAN M2L
-int fa0/0
-no shutdown
-exit
-
-! Service Informatique
-int fa0/0.2
-encapsulation dot1Q 2
-ip address 172.16.2.62 255.255.255.192
-exit
-
-! Service Commercial
-int fa0/0.3
-encapsulation dot1Q 3
-ip address 172.16.3.62 255.255.255.192
-ip helper-address 172.16.2.61
-ip helper-address 172.16.2.60
-ip helper-address 172.16.2.58
-exit
-
-! Gestion
-int fa0/0.99
-encapsulation dot1Q 99
-ip address 172.16.99.1 255.255.255.240
-exit
-
-! ##############################
-! Sous reseaux WIRELESS LAN M2L
-! ##############################
-int e1/2
-no shutdown
-exit
-
-int e1/2.100
-encapsulation dot1Q 100
-ip address 172.16.100.30 255.255.255.224
-! ip access-group 102 in
-exit
-
-int e1/2.101
-encapsulation dot1Q 101
-ip address 172.16.101.126 255.255.255.128
-! ip access-group 102 in
-exit
-
-int e1/2.99
-encapsulation dot1Q 99
-ip address 172.16.99.30 255.255.255.248
-exit
-
-! ###################
-!  Config du routage 
-! ###################
-
-router ospf 1
-network 172.16.2.0 0.0.0.63 area 0
-network 172.16.3.0 0.0.0.63 area 0
-network 172.16.100.0 0.0.0.31 area 0
-network 172.16.101.0 0.0.0.127 area 0
-network 192.168.0.0 0.0.0.15 area 0
-network 172.16.99.16 0.0.0.7 area 0
-network 172.16.99.24 0.0.0.7 area 0
-network 10.0.0.0 0.0.0.7 area 0
-network 10.0.0.8 0.0.0.7 area 0
-default-information originate
-passive-interface e1/0
-passive-interface e1/1.2
-passive-interface e1/1.3
-exit
-
-ip route 0.0.0.0 0.0.0.0 10.0.0.6
-
-
-! ##############################################
-! configuration DHCP WIFI Visiteurs et Employes
-! ##############################################
-
+!
+hostname RM2L
+!
+boot-start-marker
+boot-end-marker
+!
+enable secret 5 $1$qSRs$KrhAnaPMoxdzhVLbGaMyu.
+!
+no aaa new-model
+!
+resource policy
+!
+no network-clock-participate slot 1 
+no network-clock-participate wic 0 
+ip cef
+!
+!
+no ip dhcp use vrf connected
 ip dhcp excluded-address 172.16.100.26 172.16.100.30
 ip dhcp excluded-address 172.16.101.121 172.16.101.126
-
-ip dhcp pool Visiteurs
-network 172.16.100.0 255.255.255.224
-default-router 172.16.100.30
-dns-server 172.16.2.61
-dns-server 8.8.8.8
-lease 2 0 0
-exit
-
-ip dhcp pool Employes
-network 172.16.101.0 255.255.255.128
-default-router 172.16.101.126
-dns-server 172.16.2.61
-domain-name m2l.fr
-lease 2 0 0
-exit
-
-! ##################################################
-! ############## Filtrage Firewall #################
-! 
-! I1 Liaison vers LIGUE - 10.0.0.9    Fa0/0
-! I2 Liaison vers DMZ  -  192.168.0.14  Eth 1/0
-! I3 Liaison vers HSRP   - 10.0.0.1    Fa0/1
-! I4 Liaison vers WIFI  - 172.16.x.0    Eth1/2
 !
-! ##################################################
-
-
-! Règles sur acces Internet sur I3 en IN
+ip dhcp pool Visiteurs
+   network 172.16.100.0 255.255.255.224
+   default-router 172.16.100.30 
+   dns-server 8.8.8.8 
+   lease 2
+!
+ip dhcp pool Employes
+   network 172.16.101.0 255.255.255.128
+   default-router 172.16.101.126 
+   dns-server 172.16.2.61 
+   domain-name m2l.fr
+   lease 2
+!
+!
+ip domain name m2l.lan
+ip name-server 172.16.2.61
+ip ssh time-out 60
+ip ssh authentication-retries 2
+ip ssh version 2
+!
+!
+!
+!
+!
+!
+!
+!
+!
+!
+!
+!
+!
+!
+!
+!
+!
+username admin privilege 15 password 7 050A02022842
+!
+! 
+!
+!
+!
+!
+interface FastEthernet0/0
+ description M2L-INFO+Admin
+ no ip address
+ duplex auto
+ speed auto
+!
+interface FastEthernet0/0.2
+ description INFORMATIQUE
+ encapsulation dot1Q 2
+ ip address 172.16.2.62 255.255.255.192
+ no snmp trap link-status
+!
+interface FastEthernet0/0.3
+ description COMMERCIAL
+ encapsulation dot1Q 3
+ ip address 172.16.3.62 255.255.255.192
+ ip helper-address 172.16.2.61
+ ip helper-address 172.16.2.60
+ ip helper-address 172.16.2.58
+ no snmp trap link-status
+!
+interface FastEthernet0/0.99
+ description MANAGEMENT
+ encapsulation dot1Q 99
+ ip address 172.16.99.1 255.255.255.240
+ no snmp trap link-status
+!
+interface Serial0/0
+ no ip address
+ shutdown
+ no dce-terminal-timing-enable
+!
+interface FastEthernet0/1
+ ip address 10.0.0.1 255.255.255.248
+ duplex auto
+ speed auto
+!
+interface Ethernet1/0
+ ip address 192.168.0.14 255.255.255.240
+ half-duplex
+!
+interface Ethernet1/1
+ no ip address
+ half-duplex
+!
+interface Ethernet1/1.2
+!
+interface Ethernet1/2
+ no ip address
+ half-duplex
+!
+interface Ethernet1/2.99
+ encapsulation dot1Q 99
+ ip address 172.16.99.25 255.255.255.248
+ no snmp trap link-status
+!
+interface Ethernet1/2.100
+ encapsulation dot1Q 100
+ ip address 172.16.100.30 255.255.255.224
+ no snmp trap link-status
+!
+interface Ethernet1/2.101
+ encapsulation dot1Q 101
+ ip address 172.16.101.126 255.255.255.128
+ no snmp trap link-status
+!
+interface Ethernet1/3
+ ip address 10.0.0.9 255.255.255.248
+ half-duplex
+!
+router ospf 1
+ log-adjacency-changes
+ passive-interface Ethernet1/0
+ network 10.0.0.0 0.0.0.7 area 0
+ network 10.0.0.8 0.0.0.7 area 0
+ network 172.16.2.0 0.0.0.63 area 0
+ network 172.16.3.0 0.0.0.63 area 0
+ network 172.16.99.0 0.0.0.15 area 0
+ network 172.16.99.24 0.0.0.7 area 0
+ network 172.16.100.0 0.0.0.31 area 0
+ network 172.16.101.0 0.0.0.127 area 0
+ network 192.168.0.0 0.0.0.15 area 0
+ default-information originate
+!
+ip route 0.0.0.0 0.0.0.0 10.0.0.6
+!
+!
+ip http server
+ip http authentication local
+no ip http secure-server
+!
 access-list 100 permit tcp any 172.16.2.48 0.0.0.15 established
 access-list 100 permit tcp any 172.16.100.0 0.0.0.31 established
 access-list 100 permit tcp any host 172.16.2.60 established
@@ -166,47 +167,41 @@ access-list 100 permit tcp any host 192.168.0.13 eq 443
 access-list 100 permit tcp any host 192.168.0.12 eq ftp
 access-list 100 permit icmp any 172.16.2.48 0.0.0.15 echo-reply
 access-list 100 permit icmp any 172.16.2.48 0.0.0.15 unreachable
-! access-list 100 permit icmp any 172.16.99.0 0.0.0.63 echo-reply
-! access-list 100 permit icmp any 172.16.99.0 0.0.0.63 unreachable
 access-list 100 permit udp any any
-
-! Règles Acces WIFI sur I4 en IN
-access-list 102 deny tcp 172.16.100.0 0.0.0.255 172.16.0.0 0.0.255.255
+access-list 102 deny   tcp 172.16.100.0 0.0.0.255 172.16.0.0 0.0.255.255
 access-list 102 permit icmp any 172.16.2.48 0.0.0.15 echo-reply
 access-list 102 permit icmp any 172.16.2.48 0.0.0.15 unreachable
-! access-list 102 permit icmp any 172.16.99.0 0.0.0.63 echo-reply
-! access-list 102 permit icmp any 172.16.99.0 0.0.0.63 unreachable
 access-list 102 permit tcp any any
-access-list 100 permit udp any any
-
-! ###################################################
-
-ip http server
-ip http authentication local
-no ip http secure-server
-
-logging console
-ip domain-lookup
-ip name-server 172.16.2.61
-
-
-! ###################################################
-! ################## Config SNMP ####################
-! ###################################################
-
-
 snmp-server community EyesOfNetwork RO
-snmp-server host 172.16.2.56 EyesOfNetwork
-snmp-server host 172.16.2.59 EyesOfNetwork
-
+snmp-server enable traps snmp linkdown linkup coldstart warmstart
 snmp-server enable traps flash insertion removal
-snmp-server enable traps cpu threshold
 snmp-server enable traps envmon fan shutdown supply temperature
-
-snmp-server enable traps snmp warmstart linkdown linkup coldstart
-snmp-server enable traps ospf state-change
-
-snmp-server enable traps config
 snmp-server enable traps config-copy
-
-exit
+snmp-server enable traps config
+snmp-server enable traps ospf state-change
+snmp-server enable traps cpu threshold
+snmp-server host 172.16.2.56 EyesOfNetwork 
+snmp-server host 172.16.2.59 EyesOfNetwork 
+!
+!
+!
+control-plane
+!
+!
+!
+!
+!
+!
+!
+!
+!
+!
+line con 0
+line aux 0
+line vty 0 4
+ password 7 05080F1C2243
+ login local
+ transport input ssh
+!
+!
+end
