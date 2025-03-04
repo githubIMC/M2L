@@ -1,12 +1,11 @@
 
-
+service password-encryption
 
 hostname LIG-SW3
 
 no logging console
-
-service password-encryption
 enable secret cisco
+
 username admin privilege 15 password admin
 
 no ip domain-lookup
@@ -79,13 +78,11 @@ snmp-server enable traps envmon fan shutdown supply temperature status
 snmp-server enable traps hsrp
 snmp-server enable traps cluster
 snmp-server enable traps vlan-membership
-snmp-server host 172.16.2.59 EyesOfNetwork
-
+snmp-server host 172.16.2.59 EyesOfNetwork 
+!
 line con 0
 line vty 0 4
  password cisco
  login local
  transport input ssh
 end
-
-
