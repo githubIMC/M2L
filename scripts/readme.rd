@@ -14,3 +14,6 @@ chmod 777 /srv/tftp
 
 systemctl restart tftpd-hpa
 systemctl enable tftpd-hpa
+
+apt install atftp -y
+apt install expect -y
