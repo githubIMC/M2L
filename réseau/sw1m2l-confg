@@ -57,12 +57,17 @@ switchport access VLAN 3
 spanning-tree portfast
 exit
 
+int fa 0/23
+switchport mode access
+switchport access vlan 2
+exit
+
 int vlan 99
-ip address 172.16.99.17 255.255.255.248
+ip address 172.16.99.2 255.255.255.240
 no shutdown
 exit
 
-ip default-gateway 172.16.99.22
+ip default-gateway 172.16.99.1
 
 ip http server
 ip http authentication local
