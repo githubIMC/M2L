@@ -4,7 +4,7 @@ no logging console
 
 service password-encryption
 
-no cdp run
+no cdp run 
 vtp mode transparent
 
 enable secret cisco
@@ -108,5 +108,3 @@ snmp-server enable traps vlancreate
 snmp-server enable traps vlandelete
 
 snmp-server enable traps envmon fan shutdown supply temperature
-
-
