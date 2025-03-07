@@ -2,6 +2,7 @@
 
 # Tableau associatif : Nom => "IP fichier_config"
 declare -A equipements=(
+  ["SW1-M2L"]="172.16.99.2 sw1m2l-confg"
   ["LIG-SW3"]="172.16.99.20 lig-sw3-confg"
   ["LIG-SW2"]="172.16.99.19 lig-sw2-confg"
   ["LIG-SW1"]="172.16.99.18 lig-sw1-confg"
@@ -9,22 +10,46 @@ declare -A equipements=(
   ["HSRP2"]="10.0.0.4 hsrp-sec-confg"
   ["HSRP1"]="10.0.0.5 hsrp-pri-confg"
   ["RM2L"]="172.16.99.1 rm2l-confg"
-  ["SW1-M2L"]="172.16.99.2 sw1m2l-confg"
 )
 
 # Mot de passe SSH pour tous les équipements
 PASSWORD="admin"
 
+# Fonction pour attendre qu'un équipement réponde au ping
+wait_for_ping() {
+    local IP="$1"
+    local TIMEOUT=300  # Temps d'attente maximum en secondes (5 min)
+    local INTERVAL=10  # Intervalle entre chaque tentative en secondes
+    local ELAPSED=0
+
+    echo "Attente de la disponibilité de l'équipement $IP..."
+    while ! ping -c 1 -W 2 "$IP" &> /dev/null; do
+        echo "Équipement $IP non joignable, nouvelle tentative dans $INTERVAL secondes..."
+        sleep "$INTERVAL"
+        ELAPSED=$((ELAPSED + INTERVAL))
+        
+        if [ "$ELAPSED" -ge "$TIMEOUT" ]; then
+            echo "Temps d'attente dépassé pour $IP. Passage au suivant."
+            return 1
+        fi
+    done
+    echo "Équipement $IP est maintenant joignable."
+    return 0
+}
+
+
 # Boucle sur chaque équipement (ordre non garanti)
 for equipement in "${!equipements[@]}"; do
   IP=$(echo ${equipements[$equipement]} | awk '{print $1}')
   CONFIG_FILE=$(echo ${equipements[$equipement]} | awk '{print $2}')
-
+  echo "#############################################################"
   echo "🚀 Connexion à $equipement ($IP) avec le fichier $CONFIG_FILE"
+  echo "#############################################################"
+
+  wait_for_ping "$IP" || continue  # Attendre que l'équipement réponde au ping avant SSH
 
   # Lancer le script Expect pour chaque équipement
   expect <<EOF
-    set timeout 60
     spawn ssh admin@$IP
     expect {
       "Password:" { send "$PASSWORD\r" }
@@ -63,7 +88,7 @@ for equipement in "${!equipements[@]}"; do
 
     # Pause pour attendre le redémarrage
     puts "⏳ Attente de 60 secondes pour le redémarrage..."
-    sleep 80
+    sleep 60
 
     puts "✅ Commandes exécutées avec succès pour $equipement ($IP)."
     expect eof
