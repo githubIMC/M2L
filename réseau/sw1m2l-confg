@@ -40,7 +40,7 @@ VLAN 99
 name GESTION
 exit
 
-int range fa0/23 -24
+int fa0/24
 switchport mode trunk
 switchport nonegotiate
 exit
