@@ -12,6 +12,9 @@ declare -A equipements=(
   ["RM2L"]="172.16.99.1 rm2l-confg"
 )
 
+# Tableau définissant l'ordre souhaité
+ordre=( "LIG-SW3" "LIG-SW2" "LIG-SW1" "RLIGUES" "HSRP2" "HSRP1" "RM2L" "SW1-M2L")
+
 # Mot de passe SSH pour tous les équipements
 PASSWORD="admin"
 
@@ -39,9 +42,14 @@ wait_for_ping() {
 
 
 # Boucle sur chaque équipement (ordre non garanti)
-for equipement in "${!equipements[@]}"; do
+for equipement in "${ordre[@]}"; do
+
+  echo "$equipement => ${equipements[$equipement]}"
+
+  # Extraire l'IP et le nom du fichier de configuration
   IP=$(echo ${equipements[$equipement]} | awk '{print $1}')
   CONFIG_FILE=$(echo ${equipements[$equipement]} | awk '{print $2}')
+  
   echo "#############################################################"
   echo "🚀 Connexion à $equipement ($IP) avec le fichier $CONFIG_FILE"
   echo "#############################################################"
