@@ -1,0 +1,39 @@
+# 📡 Inventaire des équipements réseau — M2L
+
+## 🗂️ Sommaire
+
+- [🔁 Routeurs](#-routeurs)
+- [🔀 Switchs](#-switchs)
+- [🕒 Mise à jour](#-mise-à-jour)
+
+---
+
+## 🔁 Routeurs
+
+| Nom      | Modèle      | Version IOS   | Image IOS                   | System image                                            | ROM         | RAM     | Flash   | Adresse IP     | Fonctionnalités                                                                 |
+|----------|-------------|---------------|------------------------------|----------------------------------------------------------|-------------|---------|---------|----------------|----------------------------------------------------------------------------------|
+| HSRP1    | Cisco 1841  | 12.4(6)T      | C1841-SPSERVICESK9-M        |                                                          | 12.3(8r)T9  | 128 Mo  | 32 Mo   |                | RIP, EIGRP, OSPF, BGP, SSH, Telnet, RMON                                         |
+| HSRP2    | Cisco 1841  | 12.3(14)YT1   | C1841-ADVENTERPRISEK9-M     |                                                          | 12.4(13r)T  | 128 Mo  | 32 Mo   |                | RIP, EIGRP, OSPF, BGP, SSH, Telnet, RMON, 🔐 Cryptage RSA                        |
+| RM2L-A   | Cisco 2600  | 12.4(7)       | C2600-ADVENTERPRISEK9-M     | flash:c2600-adventerprisek9-mz.124-7.bin                | 12.2(8r)    | 128 Mo  | 32 Mo   | 172.16.99.1    | RIP, EIGRP, OSPF, BGP, Telnet, SSH, 🔁 NAT                                        |
+| R-LIGUES | Cisco 2801  | 12.4(15)T10   | C2801-SPSERVICESK9-M        | flash:c2801-spservicesk9-mz.124-15.T10.bin              | 12.4(13r)T  |         |         | 172.16.99.17   | RIP, EIGRP, OSPF, BGP, Telnet, SSH                                              |
+
+---
+
+## 🔀 Switchs
+
+| Nom      | Modèle    | Version IOS   | Image IOS               | System image                                         | Flash   | Adresse IP     | Fonctionnalités                                                                  |
+|----------|-----------|----------------|--------------------------|------------------------------------------------------|---------|----------------|-----------------------------------------------------------------------------------|
+| SW-M2L   | C2950-24  | 12.1(22)EA14   | C2950-I6K2L2Q4-M        | flash:/c2950-i6k2l2q4-mz.121-22.EA14.bin            | 8 Mo    | 172.16.99.2    | VLAN, STP, RSPAN, SSH, IGMP Snooping, QoS, ACL, DHCP Snooping                   |
+| SW1-LIG  | C2950-24  | 12.1(22)EA7    | C2950-I6K2L2Q4-M        | flash:/c2950-i6k2l2q4-mz.121-22.EA7.bin             | 8 Mo    | 172.16.99.18   | VLAN, STP, RSPAN, SSH, IGMP Snooping, QoS, ACL, DHCP Snooping                   |
+| SW2-LIG  | C2950-24  | 12.1(22)EA13   | C2950-I6K2L2Q4-M        | flash:c2950-i6k2l2q4-mz.121-22.EA13.bin             | 8 Mo    | 172.16.99.19   | VLAN, STP, RSPAN, SSH, IGMP Snooping, QoS, ACL, DHCP Snooping                   |
+| SW3-LIG  | C2950-24  | 12.1(22)EA7    | C2950-I6K2L2Q4-M        | flash:/c2950-i6k2l2q4-mz.121-22.EA7.bin             | 8 Mo    | 172.16.99.20   | VLAN, STP, RSPAN, SSH, IGMP Snooping, QoS, ACL, DHCP Snooping                   |
+
+---
+
+## 🕒 Mise à jour
+
+**Dernière révision : Juin 2025**
+
+---
+
+> 💡 *Ce document est destiné à documenter les versions IOS, les fonctionnalités disponibles, et les adresses IP des équipements réseau du projet M2L. Toute modification matérielle ou mise à jour logicielle doit être reportée ici.*
