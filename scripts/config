@@ -1,8 +1,0 @@
-# ~/.ssh/config
-Host 172.16.99.* 10.0.0.*
-  StrictHostKeyChecking no
-  UserKnownHostsFile=/dev/null
-  HostKeyAlgorithms +ssh-rsa
-  KexAlgorithms +diffie-hellman-group1-sha1
-  Ciphers +3des-cbc
-  User admin
